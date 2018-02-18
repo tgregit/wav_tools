@@ -18,12 +18,18 @@ class vctk:
         return num_string
 
 
-    def get_wav(self, speaker_id, sentence_id):
+    def get_wav(self, speaker_id, sentence_id, strip_silence=False):
         speaker_prefix = 'p' + str(speaker_id)
-
         number_string = self.get_number_string_from_int(sentence_id)
+        full_wav_path = self.data_path + '/wav48/' + speaker_prefix + '/' + speaker_prefix + '_' + number_string + '.wav'
 
-        full_wav_path = self.data_path + '/wav48/' + speaker_prefix + '/' + speaker_prefix + '_' + number_string
+        data, sr = librosa.load(full_wav_path, self.sample_rate)
+
+        if strip_silence:
+            print('strip sielcne here')
+
+        return data
+
 
         print(full_wav_path)
 
