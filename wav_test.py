@@ -1,23 +1,18 @@
 import wav_tools as wt
 from scipy.fftpack import fft, dct, idct
-
-path_to_vctk_data = '/home/foo/data/VCTK-Corpus'
-vctk = wt.vctk(path_to_vctk_data)
-
-wav = vctk.get_wav(228,2)  # speaker #255, sentence #2
-
-
-# print(wav.shape[0])
-# dct = dct(wav) / 20.0
-# print(dct[0:100])
-
+import librosa
+import numpy as np
 window_length = 1024
-coef_to_keep = 170
+coef_to_keep = 256
 
-d = wt.wav_to_dct_coef(wav, window_length, coef_to_keep)
-print(d)
+vctk = wt.vctk('/home/foo/data/VCTK-Corpus')
 
+wav = vctk.get_wav(228, 2)  # speaker #255, sentence #2  #wav = wt.normalize(wav)
+print(wav[1110:1115])
+librosa.output.write_wav('/home/foo/data/wavs-test/28.wav', wav, sr=vctk.sample_rate)
 
+dct_compressed = wt.wav_to_dct_coef_compressed(wav, window_length, coef_to_keep)
+i = wt.dct_coef_compressed_to_amplitudes(dct_compressed, window_length)
+print(i, i.shape)
 
-#print(vc.data_path)
-# wt.foo()
+librosa.output.write_wav('/home/foo/data/wavs-test/28idct.wav', i, sr=vctk.sample_rate)
