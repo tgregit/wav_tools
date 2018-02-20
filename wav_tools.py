@@ -83,16 +83,90 @@ def normalize_neg_one(my_data):
     return my_data
 
 
-def wav_to_dct_coef_compressed(my_wav, my_window_length, my_coef_to_keep):
+def get_non_linear_quantization_values(my_quantizations, my_percent):
+    half_quants = my_quantizations // 2
+    quant_values = []
+
+    amp_space_remaining = 1.0
+    for i in range(0, half_quants):
+        val = amp_space_remaining * my_percent
+        quant_values.append(val)
+        amp_space_remaining = amp_space_remaining - (amp_space_remaining - val)
+
+    quant_values[half_quants - 1] = 0.0
+
+    return quant_values
+
+def linear_to_non_linear_integer(my_data, my_quantizations, my_percent):
+    rows = my_data.shape[0]
+    columns = my_data.shape[1]
+    my_data = np.reshape(my_data,(rows * columns))
+    half_quantizations = my_quantizations // 2
+    quantization_values = get_non_linear_quantization_values(my_quantizations, my_percent)
+    data_integers = []
+    count = np.zeros((my_quantizations))
+
+    for i in range(0, my_data.shape[0]):
+        sign = 1
+        if my_data[i] < 0.0:
+            sign = -1
+        val = abs(my_data[i])
+        for k in range(0, half_quantizations):
+            q_val = quantization_values[k]
+
+            if val > q_val or val == q_val:
+                index = k
+                if sign == 1:
+                    index = my_quantizations - k - 1
+                data_integers.append(index)
+                count[index] = count[index] + 1.0
+                break
+    data_return = np.array(data_integers, dtype=np.int)
+    data_return = np.reshape(data_return,(rows,columns))
+    return data_return
+
+def non_linear_integer_to_linear(my_data_ints, my_quantizations, my_percent):
+    rows = my_data_ints.shape[0]
+    columns = my_data_ints.shape[1]
+    my_data_ints = np.reshape(my_data_ints, (rows * columns))
+    half_quantizations = my_quantizations // 2
+
+    quantization_values = get_non_linear_quantization_values(my_quantizations, my_percent)
+
+    linear_amps = np.zeros((my_data_ints.shape[0]), dtype=np.float)
+
+    for i in range(0, my_data_ints.shape[0]):
+        sign = -1
+
+        index = my_data_ints[i]
+        if index >= half_quantizations:
+            index = my_quantizations - index - 1#index - half_quantizations
+            sign = 1
+            #print(index)
+        linear_value = quantization_values[index]
+        linear_value = linear_value * sign * 1.0
+        linear_amps[i] = linear_value
+
+    linear_amps = np.reshape(linear_amps, (rows, columns))
+    return linear_amps
+
+def wav_to_dct_coef_compressed(my_wav, my_window_length, my_coef_to_keep, my_cap_value):
     total_windows = my_wav.shape[0] // my_window_length
     compressed_dct = np.zeros((total_windows, my_coef_to_keep))
 
     my_wav = my_wav[0:total_windows * my_window_length]
     my_wav = np.reshape(my_wav,(total_windows, my_window_length))
     wav_dct = dct(my_wav, norm='ortho')
+    for r in wav_dct:
+        for k in range(0, r.shape[0]):
+            if r[k] > my_cap_value:
+                r[k] = my_cap_value
+            if r[k] < (-1.0 * my_cap_value):
+                r[k] = (-1.0 * my_cap_value)
 
     for i in range(0, total_windows ):
         full_dct = wav_dct[i]
+
         compressed_dct[i] = full_dct[0: my_coef_to_keep]
 
     return compressed_dct
