@@ -22,27 +22,34 @@ class vctk:
         total_windows = my_data.shape[0] // my_window_length
         start_index = 0
         end_index = my_data.shape[0]
+        ignored_samples = end_index - (total_windows * my_window_length)
+        print(ignored_samples)
 
-        std_threshold = .008
+        std_threshold = .05
 
         for i in range(0, total_windows):
-            current_window = my_data[i*my_window_length:(i*my_window_length) + my_window_length]
-            if current_window.std() > std_threshold:
+            current_window = my_data[i * my_window_length:(i * my_window_length) + my_window_length]
+            print(i, current_window.max())
+
+        for i in range(0, total_windows):
+            current_window = my_data[i*my_window_length:(i * my_window_length) + my_window_length]
+            if current_window.max() > std_threshold:
                 start_index = i * my_window_length
                 break
 
-        for i in range(total_windows - 1, 0, -1):
-            current_window = my_data[i * my_window_length:(i * my_window_length) + my_window_length]
-            print(current_window.std())
-            if current_window.std() > std_threshold:
-                end_index = (i * my_window_length)
+        data_rev = my_data.copy()   # TODO: REFACTOR THIS, THE K loop below is identical to the i, pull out to function
+        for j in range(0, data_rev.shape[0]):
+            data_rev[j] = my_data[data_rev.shape[0] - j - 1]
+
+        for k in range(0, total_windows):
+            current_window = data_rev[k*my_window_length:(k * my_window_length) + my_window_length]
+            if current_window.max() > std_threshold:
+                end_index = ((my_window_length * total_windows) - (k * my_window_length)) + ignored_samples
                 break
+
         data_silence_stripped = my_data[start_index:end_index]
 
-        print(start_index,end_index)
-
         return data_silence_stripped
-
 
 
     def get_wav(self, speaker_id, sentence_id, strip_silence=False):
@@ -53,7 +60,7 @@ class vctk:
         data, sr = librosa.load(full_wav_path, self.sample_rate)
 
         if strip_silence == True:
-            data = self.strip_silence(data, 2048)
+            data = self.strip_silence(data, 5000)
 
             print('strip silence here')
 

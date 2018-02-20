@@ -9,7 +9,7 @@ vctk = wt.vctk('/home/foo/data/VCTK-Corpus')
 
 wav = vctk.get_wav(228, 2, True)  # speaker #255, sentence #2  #wav = wt.normalize(wav) T
 
-librosa.output.write_wav('/home/foo/data/wavs-test/28.wav', wav, sr=vctk.sample_rate)
+librosa.output.write_wav('/home/foo/data/wavs-test/28.wav', wav, sr=22050)
 
 # dct_compressed = wt.wav_to_dct_coef_compressed(wav, window_length, coef_to_keep)
 # for dc in dct_compressed:
