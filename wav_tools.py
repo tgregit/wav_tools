@@ -29,7 +29,6 @@ class vctk:
 
         for i in range(0, total_windows):
             current_window = my_data[i * my_window_length:(i * my_window_length) + my_window_length]
-            print(i, current_window.max())
 
         for i in range(0, total_windows):
             current_window = my_data[i*my_window_length:(i * my_window_length) + my_window_length]
@@ -38,6 +37,7 @@ class vctk:
                 break
 
         data_rev = my_data.copy()   # TODO: REFACTOR THIS, THE K loop below is identical to the i, pull out to function
+                                    # OR Recombine into single loop
         for j in range(0, data_rev.shape[0]):
             data_rev[j] = my_data[data_rev.shape[0] - j - 1]
 
@@ -60,7 +60,7 @@ class vctk:
         data, sr = librosa.load(full_wav_path, self.sample_rate)
 
         if strip_silence == True:
-            data = self.strip_silence(data, 5000)
+            data = self.strip_silence(data, 2048)
 
             print('strip silence here')
 
@@ -91,7 +91,7 @@ def wav_to_dct_coef_compressed(my_wav, my_window_length, my_coef_to_keep):
     my_wav = np.reshape(my_wav,(total_windows, my_window_length))
     wav_dct = dct(my_wav, norm='ortho')
 
-    for i in range(0, total_windows - 1):
+    for i in range(0, total_windows ):
         full_dct = wav_dct[i]
         compressed_dct[i] = full_dct[0: my_coef_to_keep]
 
